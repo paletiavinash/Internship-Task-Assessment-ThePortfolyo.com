@@ -1,74 +1,19 @@
-# Internship-Task-Assessment-ThePortfolyo.com
+Strict Mode: The code starts with 'use strict';. This is a directive that enables strict mode, which helps catch common coding mistakes and "unsafe" actions.
 
-## 1.Create S3 Buckets:
-- Create S3 buckets for each of your React apps (web1, web2, web3).
-- Upload the built React app files (including index.html, css, js, etc.) to their respective buckets.
+Lambda Handler Function: The code exports an asynchronous Lambda function named handler. This function takes an event parameter, which typically contains information about the request triggering the Lambda function.
 
-## 2.Configure Static Website Hosting:
-- Enable static website hosting for each S3 bucket.
-- Set the index document to index.html.
+Try-Catch Block: The main logic of the function is wrapped in a try-catch block. This is a common pattern used in JavaScript to handle errors gracefully. If an error occurs within the try block, it is caught and handled in the catch block.
 
-## 3.Set Up CloudFront Distribution:
-- Create a CloudFront distribution.
-- Configure the distribution to use the S3 buckets as origins.
-- Set the default behavior to redirect HTTP to HTTPS if desired.
+Request Parsing: Inside the try block, the function extracts information from the incoming request. Specifically, it retrieves the host header from the request, which typically contains the domain name of the requested resource.
 
-## 4.Set Up Lambda@Edge Function:
-- Create a Lambda function in the AWS region where you want to deploy your CloudFront distribution.
-- Write a Lambda function that examines the incoming request's host header (subdomain) and rewrites the request path accordingly to route to the appropriate S3 bucket.
-- Here's a basic example of how the Lambda function might look in Node.js:
+Extract Subdomain: The code then extracts the subdomain from the host header. It does this by splitting the host string using the dot ('.') as a delimiter and taking the first part of the resulting array.
 
-Javascript
-```Javascript
-exports.handler = async (event) => {
-    const request = event.Records[0].cf.request;
-    const host = request.headers.host[0].value;
+Bucket Name Generation: Next, the code constructs the name of the S3 bucket based on the subdomain. It concatenates the subdomain with the string '-bucket' to form the bucket name.
 
-    let subdomain = host.split('.')[0];
+Setting S3 Origin: The code sets up the S3 origin for the request. It creates an object with properties specific to S3 origins, including the domainName and region. The domainName is set to ${bucketName}.s3.amazonaws.com, where ${bucketName} is the dynamically generated bucket name.
 
-    // Map subdomain to S3 bucket name
-    let bucketName;
-    switch (subdomain) {
-        case 'username1':
-            bucketName = 'web1-bucket';
-            break;
-        case 'username2':
-            bucketName = 'web2-bucket';
-            break;
-        case 'username3':
-            bucketName = 'web3-bucket';
-            break;
-        // Add more cases for additional subdomains if needed
-        default:
-            bucketName = 'default-bucket'; // Default bucket if subdomain not found
-    }
+Return Request: Finally, the modified request object is returned from the Lambda function. This modified request will be used to fetch the requested resource from the appropriate S3 bucket.
 
-    // Rewrite the request path to point to the appropriate S3 bucket
-    request.origin = {
-        s3: {
-            domainName: `${bucketName}.s3.amazonaws.com`,
-            region: 'us-east-1', // Change to your bucket's region
-        }
-    };
+Error Handling: In case any error occurs during the execution of the function (for example, if the expected structure of the incoming event is not as assumed), it is caught in the catch block. The function logs the error to the console and returns a generic 500 Internal Server Error response.
 
-    return request;
-};
-```
-## 1.Associate Lambda Function with CloudFront:
-- Associate the Lambda@Edge function with the appropriate CloudFront event (e.g., Viewer Request)
-- Deploy the Lambda function.
-
-## 2.Set Up DNS:
-- Configure DNS records for your domains (web1.example.com, web2.example.com, web3.example.com) to point to the CloudFront distribution.
-
-## 3.React App Adjustments:
-- To address the "index.html loading correctly but CSS/JS from root" issue, configure your React applications to use relative paths for loading assets (CSS, JS). This ensures they load from the correct folder within the S3 bucket regardless of the accessed URL. You can achieve this using techniques like:
-- Dynamic base path configuration based on environment variables. Libraries like react-router-dom can help with this.
-- Using a subpath in your asset URLs within the React code (e.g., ./assets/style.css instead of just style.css).
-
-## 4.Testing and Deployment:
-- Test the setup to ensure that accessing different subdomains correctly routes to the corresponding React apps.
-- Deploy any necessary adjustments to your React app code to ensure compatibility with the S3 hosting setup.
-
-This setup will use CloudFront and Lambda@Edge to dynamically route requests based on subdomains, allowing you to host multiple React apps in a single S3 bucket while enabling different URLs to point to each app. Additionally, it addresses common issues like CSS and JS loading from the correct paths.
-
+Overall, this Lambda function is designed to dynamically route requests to different S3 buckets based on the subdomain of the request. It's intended to be used with AWS Lambda@Edge, which allows you to run code in AWS locations closer to your users, improving latency and providing a way to customize content delivery.
